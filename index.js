@@ -1,4 +1,5 @@
 const express = require('express');
+const uuid = require('uuid');
 const app = express();
 const redis = require('redis');
 const client = redis.createClient();
@@ -9,70 +10,77 @@ client.on('error', () => {
 
 app.use(express.json({
     type: '*/*'
-}))
+}));
 
-app.post('/set-data', (request, response) => {
-    const { key, value } = request.body;
-    client.set(key, value, (err, reply) => {
-        if (err) response.status(200).send({ error: true, msg: err });
-        response.status(200).send({ error: false, msg: 'se inserto con exito' });
-    });
+// solo puedes registrar nuevos usuarios, obtener un usuario con su matricula y contestar la encuesta personal
 
-});
+// uid = matricula ej 17193
+app.get('/get-student/:uid', (request, response) => {
+    debugger;
+    const uid = request.params.uid;
 
-app.get('/get-data/:key', (request, response) => {
-    const key = request.params.key;
-    client.get(key, (err, reply) => {
-        if (err) response.status(200).json({ error: true, msg: err });
-        response.send({ error: false, msg: reply });
-    });
-});
-
-app.post('/new-user', (request, response) => {
-    const user = request.body;
-    client.exists(user.id, (err, reply) => {
-        if (reply === 1) {
-            return response.json({ status: 400, msg: 'El usuario ya existe', usuario });
-        }
-        client.hmset(user.id, [
-            'user_id', user.id,
-            'email', user.email,
-            'adge', user.adge,
-        ], (err, reply) => {
-            if (err) return response.json({ error: true, msg: err });
-            response.json({ error: false, msg: reply });
-        })
-    });
-});
-
-app.post('/upadre-user/:userId', (request, response) => {
-    const userId = request.params.userId;
-    const userData = request.body;
-    client.hmset(userId, [
-        'userId', userId,
-        'email', userData.email,
-        'adge', userData.adge,
-    ], (err, _) => {
-        if (err) response.json({ error: false, msg: err });
-        response.json({ error: false, msg: 'se actualizo correctamente' });
-    });
-});
-
-app.get('/get-user/:userId', (request, response) => {
-    const userId = request.params.userId;
-    client.hgetall(userId, (err, reply) => {
+    client.hgetall(uid, (err, reply) => {
         if (err) response.json({ error: true, msg: err });
         response.json({ error: false, msg: reply });
     });
 });
 
-app.get('/delete-user/:userId', (request, response) => {
-    const userId = request.params.userId;
-    client.del(userId, (err, reply) => {
-        if (err) response.json({ error: true, msg: err });
-        response.json({ error: false, msg: 'Se elimino.' })
+app.post('/new-student', (request, response) => {
+    const user = request.body;
+    client.exists(user.id_user, (err, reply) => {
+        if (reply === 1) {
+            return response.json({ status: 400, msg: 'El usuario ya existe', user });
+        }
+
+        const x = uuid.v1();
+        client.hmset(user.uid, [
+            'id_user', x,
+            'name', user.name,
+            'matricula', user.uid,
+            'age', user.age,
+            'birthday', user.birthday,
+            'genre', user.genre,
+            'speciality', user.speciality,
+            'school', user.school,
+            'city_born', user.city_born,
+        ], (err, reply) => {
+            if (err) return response.json({ error: true, msg: err });
+            response.json({ error: false, msg: reply });
+        });
+
     });
 });
+
+app.post('/personal-survey/:uid', (request, response) => {
+    const userId = request.params.uid;
+    const user = request.body;
+    client.exists(userId, (err, reply) => {
+        if (reply < 1) {
+            return response.json({ status: 400, msg: 'El usuario no existe', userId });
+        }
+        const x = uuid.v1();
+        client.hmset(`personal-${userId}`, [
+            'survey_uid', x,
+            'name', 'personal',
+            'student', userId,
+            'residencia', user.residencia,
+            'sangre', user.sangre,
+            'religion', user.religion,
+            'e_civil', user.e_civil,
+            'curp', user.curp,
+            'nss', user.nss,
+            'telefono', user.telefono,
+            'preferencia', user.preferencia,
+            'lengua_nativa', user.lengua_nativa,
+            'decendencia_indigena', user.decendencia,
+
+        ], (err, _) => {
+            if (err) response.json({ error: true, msg: err });
+            response.json({ error: false, msg: 'se agrego encuesta personal correctamente' });
+        });
+    });
+});
+
 
 app.listen(3000, () => {
     console.log('Server running in port 3000');
