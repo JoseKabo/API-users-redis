@@ -1,0 +1,18 @@
+###
+GET http://localhost:3000/get-student/17
+
+###
+POST http://localhost:3000/new-student
+content-type: application/json
+
+{
+    "id_user": "x",
+    "name":"jose medellin",
+    "uid":"17",
+    "age":"22",
+    "birthday":"06-06-1999",
+    "genre":"M",
+    "speciality":"ISC",
+    "school":"ITSM",
+    "city_born":"mante"
+}

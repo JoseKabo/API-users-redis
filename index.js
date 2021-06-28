@@ -3,6 +3,8 @@ const uuid = require('uuid');
 const app = express();
 const redis = require('redis');
 const client = redis.createClient();
+const cors = require('cors')
+
 
 client.on('error', () => {
     console.log('error');
@@ -11,6 +13,10 @@ client.on('error', () => {
 app.use(express.json({
     type: '*/*'
 }));
+
+app.use(cors());
+
+
 
 // solo puedes registrar nuevos usuarios, obtener un usuario con su matricula y contestar la encuesta personal
 
